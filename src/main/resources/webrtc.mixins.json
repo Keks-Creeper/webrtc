@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "rtc.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "client": [
+    "MouseHandlerAccessor",
+    "MouseHandlerMixin",
+    "MinecraftMixin",
+    "LibraryMixin",
+    "WindowMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "minVersion": "0.8.4"
+}

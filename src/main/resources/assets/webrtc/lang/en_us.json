@@ -1,0 +1,7 @@
+{
+    "rtc.started": "Server started",
+    "rtc.click": "This is your IP. Click it to test the WebRTC transmission",
+    "rtc.restart": "Restart",
+    "rtc.start": "Start",
+    "rtc.webrtc": "WebRTC"
+}
