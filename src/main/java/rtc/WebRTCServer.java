@@ -623,7 +623,7 @@ public final class WebRTCServer {
         protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) {
             String uri = request.uri();
             LOGGER.info("HTTP REQUEST: {}", request.uri());
-            if (true) {//!uri.equals("/") && !uri.equals("/index.html")) {
+            if (!uri.equals("/") && !uri.equals("/index.html")) {
                 send404(ctx);
                 return;
             }
@@ -672,7 +672,7 @@ public final class WebRTCServer {
         }
 
         private void send404(ChannelHandlerContext ctx) {
-            byte[] data = "\uc0de\ubeef".getBytes(StandardCharsets.UTF_8);
+            byte[] data = "\udead\ubeef".getBytes(StandardCharsets.UTF_8);
             FullHttpResponse response = new DefaultFullHttpResponse(
                     HttpVersion.HTTP_1_1,
                     HttpResponseStatus.NOT_FOUND,
