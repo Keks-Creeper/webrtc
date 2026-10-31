@@ -179,6 +179,101 @@ def stageJarJarForClientRun = tasks.register('stageJarJarForClientRun', Sync) {
     into(layout.projectDirectory.dir('run/client-jarjar/mods'))
 }
 
+def hcrClientJar = layout.buildDirectory.file("tmp/hcrClient/${mod_id}-${mod_version}-all.jar")
+def sourceClientJar = layout.buildDirectory.file("libs/${mod_id}-${mod_version}-all.jar").get().asFile
+def ideClassesDir = layout.projectDirectory.dir('bin/main').asFile
+def hcrClientJarFile = hcrClientJar.get().asFile
+def createHcrClientJar = tasks.register('createHcrClientJar') {
+    group = 'development'
+    description = 'Uses VS Code compiled classes in the JarJar client runtime so HCR sees matching class files.'
+    dependsOn tasks.named('jarJar')
+    inputs.file(sourceClientJar)
+    inputs.dir(ideClassesDir)
+    outputs.file(hcrClientJarFile)
+
+    doLast {
+        def ideClassFiles = [:]
+        def ideRoot = ideClassesDir.toPath()
+
+        java.nio.file.Files.walk(ideRoot).withCloseable { paths ->
+            paths.filter { path ->
+                java.nio.file.Files.isRegularFile(path)
+                        && path.toString().endsWith('.class')
+                        && ideRoot.relativize(path).toString().startsWith("rtc${File.separator}")
+            }.forEach { classFile ->
+                def relativePath = ideRoot.relativize(classFile).toString().replace('\\', '/')
+                ideClassFiles[relativePath] = classFile.toFile()
+            }
+        }
+
+        if (ideClassFiles.isEmpty()) {
+            throw new GradleException("No VS Code compiled classes found under ${ideClassesDir}. Build the Java project before starting the HCR client.")
+        }
+
+        hcrClientJarFile.parentFile.mkdirs()
+        def temporaryJarFile = new File(hcrClientJarFile.parentFile, "${hcrClientJarFile.name}.tmp")
+        def writtenEntries = new HashSet<String>()
+        def sourceJar = new java.util.zip.ZipFile(sourceClientJar)
+
+        try {
+            new java.util.zip.ZipOutputStream(new java.io.BufferedOutputStream(
+                    new java.io.FileOutputStream(temporaryJarFile))).withCloseable { output ->
+                def entries = sourceJar.entries()
+                while (entries.hasMoreElements()) {
+                    def entry = entries.nextElement()
+                    def ideClass = entry.name.startsWith('rtc/') && entry.name.endsWith('.class')
+                            ? ideClassFiles[entry.name]
+                            : null
+
+                    if (entry.name.startsWith('rtc/') && entry.name.endsWith('.class') && ideClass == null) {
+                        continue
+                    }
+
+                    def outputEntry = new java.util.zip.ZipEntry(entry.name)
+                    if (entry.time >= 0) {
+                        outputEntry.time = entry.time
+                    }
+                    output.putNextEntry(outputEntry)
+
+                    def input = ideClass != null ? ideClass.newInputStream() : sourceJar.getInputStream(entry)
+                    try {
+                        input.transferTo(output)
+                    } finally {
+                        input.close()
+                    }
+
+                    output.closeEntry()
+                    writtenEntries.add(entry.name)
+                }
+
+                ideClassFiles.each { entryName, classFile ->
+                    if (!writtenEntries.contains(entryName)) {
+                        output.putNextEntry(new java.util.zip.ZipEntry(entryName))
+                        classFile.withInputStream { input -> input.transferTo(output) }
+                        output.closeEntry()
+                    }
+                }
+            }
+        } catch (Exception exception) {
+            temporaryJarFile.delete()
+            throw exception
+        } finally {
+            sourceJar.close()
+        }
+
+        java.nio.file.Files.move(
+                temporaryJarFile.toPath(),
+                hcrClientJarFile.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+    }
+}
+
+def stageHcrJarForClientRun = tasks.register('stageHcrJarForClientRun', Sync) {
+    dependsOn createHcrClientJar
+    from(hcrClientJar)
+    into(layout.projectDirectory.dir('run/client-jarjar/mods'))
+}
+
 tasks.register('prepareClientLaunch') {
     group = 'development'
     description = 'Compiles the mod and prepares the client classpath and JarJar mod for IDE launches.'
@@ -188,7 +283,11 @@ tasks.register('prepareClientLaunch') {
 }
 
 tasks.matching { it.name == 'runClient' }.configureEach {
-    dependsOn stageJarJarForClientRun
+    if (project.hasProperty('hcrClient')) {
+        dependsOn stageHcrJarForClientRun
+    } else {
+        dependsOn stageJarJarForClientRun
+    }
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

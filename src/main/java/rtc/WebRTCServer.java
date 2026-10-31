@@ -14,12 +14,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.toasts.SystemToast;
+import net.minecraft.network.chat.Component;
+
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.logging.LogUtils;
-
-import org.slf4j.Logger;
-
 import dev.onvoid.webrtc.CreateSessionDescriptionObserver;
 import dev.onvoid.webrtc.PeerConnectionFactory;
 import dev.onvoid.webrtc.PeerConnectionObserver;
@@ -65,9 +66,7 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.toasts.SystemToast;
-import net.minecraft.network.chat.Component;
+import org.slf4j.Logger;
 
 public final class WebRTCServer {
 
@@ -151,26 +150,14 @@ public final class WebRTCServer {
         }
     }
 
-    /*
-     * ------------------------------------------------------------
-     * Public API
-     * ------------------------------------------------------------
-     */
-
     public static CustomVideoSource getVideoSource() {
         return videoSource;
     }
 
-    /*
-     * ------------------------------------------------------------
-     * Start
-     * ------------------------------------------------------------
-     */
-
     public static synchronized void start() {
 
         if (!started.compareAndSet(false, true)) {
-            LOGGER.info("Server already started.");
+            LOGGER.debug("Server already started.");
             return;
         }
 
@@ -323,7 +310,7 @@ public final class WebRTCServer {
             client.peer.addTrack(client.audioTrack, streamIds);
         }
 
-        LOGGER.info("New PeerConnection created for " + browserChannel.remoteAddress());
+        LOGGER.debug("New PeerConnection created for " + browserChannel.remoteAddress());
         return client;
     }
 
@@ -410,7 +397,7 @@ public final class WebRTCServer {
                             new SetSessionDescriptionObserver() {
                                 @Override
                                 public void onSuccess() {
-                                    LOGGER.info("Browser answer applied for " + browserChannel.remoteAddress());
+                                    LOGGER.debug("Browser answer applied for " + browserChannel.remoteAddress());
                                 }
 
                                 @Override
@@ -439,7 +426,7 @@ public final class WebRTCServer {
                 }
 
                 default ->
-                    LOGGER.info("Unknown signal: " + type);
+                    LOGGER.warn("Unknown signal: " + type);
             }
 
         } catch (Exception e) {
@@ -469,10 +456,10 @@ public final class WebRTCServer {
             this.client = client;
         }
 
-        @Override
+        /*@Override
         public void onDataChannel(RTCDataChannel channel) {
-            LOGGER.info("Incoming DataChannel [" + client.browserChannel.remoteAddress() + "]: " + channel.getLabel());
-        }
+            LOGGER.debug("Incoming DataChannel [" + client.browserChannel.remoteAddress() + "]: " + channel.getLabel());
+        }*/
 
         @Override
         public void onIceCandidate(RTCIceCandidate candidate) {
@@ -481,17 +468,16 @@ public final class WebRTCServer {
 
         @Override
         public void onIceConnectionChange(RTCIceConnectionState state) {
-            LOGGER.info("ICE [" + client.browserChannel.remoteAddress() + "]: " + state);
+            LOGGER.debug("ICE [" + client.browserChannel.remoteAddress() + "]: " + state);
         }
 
         @Override
         public void onConnectionChange(RTCPeerConnectionState state) {
-            LOGGER.info("PeerConnection [" + client.browserChannel.remoteAddress() + "]: " + state);
+            LOGGER.debug("PeerConnection [" + client.browserChannel.remoteAddress() + "]: " + state);
 
-            /* The signaling WebSocket may already be closed because the browser closes it after WebRTC connects.
-             * important shit dude...
-             * Therefore cleanup must happen from WebRTC state!
-             */
+            // The signaling WebSocket may already be closed because the browser closes it after WebRTC connects.
+            // important shit dude...
+            // Therefore cleanup must happen from WebRTC state!
             if (state == RTCPeerConnectionState.FAILED || state == RTCPeerConnectionState.CLOSED) {
                 removeClient(client);
             }
@@ -515,7 +501,7 @@ public final class WebRTCServer {
 
         @Override
         public void onStateChange() {
-            LOGGER.info("DataChannel \"" + name + "\": " + channel.getState());
+            LOGGER.debug("DataChannel \"" + name + "\": " + channel.getState());
         }
 
         @Override
@@ -593,7 +579,7 @@ public final class WebRTCServer {
 
         bootstrap.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
-                .childHandler( //https://preview.redd.it/0i7csabnr7uh1.gif?width=640&format=mp4&s=b6f5d4e96e171d3493bdd387537344193f5bd6bd
+                .childHandler( // https://preview.redd.it/0i7csabnr7uh1.gif?width=640&format=mp4&s=b6f5d4e96e171d3493bdd387537344193f5bd6bd
                         new ChannelInitializer<SocketChannel>() {
                             @Override
                             protected void initChannel(SocketChannel ch) {
@@ -621,16 +607,7 @@ public final class WebRTCServer {
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) {
-            String uri = request.uri();
-            LOGGER.info("HTTP REQUEST: {}", request.uri());
-            if (!uri.equals("/") && !uri.equals("/index.html")) {
-                send404(ctx);
-                return;
-            }
-
-            try
-
-            {
+            try {
                 String html = new String(WebRTCServer.class.getResourceAsStream("/web/index.html").readAllBytes(),
                         StandardCharsets.UTF_8);
 
@@ -655,31 +632,33 @@ public final class WebRTCServer {
 
                 html = html.replace("/*--STUN--*/", Config.STUN_URL.get());
                 html = html.replace("<!--TITLE-->", Config.TITLE.get().replace("*", "Minecraft"));
-                byte[] data = html.getBytes(StandardCharsets.UTF_8);
-
-                FullHttpResponse response = new DefaultFullHttpResponse(
-                        HttpVersion.HTTP_1_1,
-                        HttpResponseStatus.OK,
-                        Unpooled.wrappedBuffer(data));
-                response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/html; charset=UTF-8");
-                response.headers().set(HttpHeaderNames.CONTENT_LENGTH, data.length);
-                ctx.writeAndFlush(response);
+                sendnudes(request, ctx, html, HttpResponseStatus.OK, "text/html");
+                //throw new Exception("test");
             } catch (Exception e) {
                 LOGGER.error("Failed to serve index.html:");
+                java.io.StringWriter stackTrace = new java.io.StringWriter();
+                e.printStackTrace(new java.io.PrintWriter(stackTrace));
+                sendnudes(request, ctx, stackTrace.toString(), HttpResponseStatus.INTERNAL_SERVER_ERROR, "text/plain");
                 e.printStackTrace();
-                send404(ctx);
             }
         }
 
-        private void send404(ChannelHandlerContext ctx) {
-            byte[] data = "\udead\ubeef".getBytes(StandardCharsets.UTF_8);
+        private void sendnudes(FullHttpRequest request, ChannelHandlerContext ctx, String msg, HttpResponseStatus status, String type) {
+            sendnudes(request, ctx, msg.getBytes(StandardCharsets.UTF_8), status, type);
+        }
+
+        private void sendnudes(FullHttpRequest request, ChannelHandlerContext ctx, byte[] data, HttpResponseStatus status, String type) {
             FullHttpResponse response = new DefaultFullHttpResponse(
                     HttpVersion.HTTP_1_1,
-                    HttpResponseStatus.NOT_FOUND,
+                    status,
                     Unpooled.wrappedBuffer(data));
-            response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain; charset=UTF-8");
+            response.headers().set(HttpHeaderNames.CONTENT_TYPE, type + "; charset=UTF-8");
             response.headers().set(HttpHeaderNames.CONTENT_LENGTH, data.length);
             ctx.writeAndFlush(response);
+            InetSocketAddress address = (InetSocketAddress) ctx.channel().remoteAddress();
+            String ip = address.getAddress().getHostAddress();
+            LOGGER.info("HTTP REQUEST [" + ip + "]: " + request.uri() + " -> " + status.code());
+            IPHandler.record(ip);
         }
     }
 
@@ -696,7 +675,7 @@ public final class WebRTCServer {
                 Channel channel = ctx.channel();
                 ClientConnection client = new ClientConnection(channel);
                 clients.put(channel, client);
-                LOGGER.info("Browser WebSocket connected: " + channel.remoteAddress());
+                LOGGER.debug("Browser WebSocket connected: " + channel.remoteAddress());
 
                 JsonObject message = new JsonObject();
                 message.addProperty("type", "maus");
@@ -718,7 +697,7 @@ public final class WebRTCServer {
              * Yr bwresr D cls snglng eWbSct
              * after WTCebR BcomS cmect. ed*
              * D wEBrtc cmect- cncetiNUE essn.g*/
-            LOGGER.info("Browser WebSocket disconnected: " + ctx.channel().remoteAddress());
+            LOGGER.debug("Browser WebSocket disconnected: " + ctx.channel().remoteAddress());
             super.channelInactive(ctx);
         }
 
@@ -767,7 +746,7 @@ public final class WebRTCServer {
         if (!removed)
             return;
 
-        LOGGER.info("Removing WebRTC client: " + client.browserChannel.remoteAddress());
+        LOGGER.debug("Removing WebRTC client: " + client.browserChannel.remoteAddress());
         client.close();
     }
 

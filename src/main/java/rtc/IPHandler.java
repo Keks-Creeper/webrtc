@@ -42,10 +42,9 @@ public final class IPHandler {
         if (ip == null || ip.isBlank())
             return;
 
-        // Remove IPv6 brackets, if present.
-        if (ip.startsWith("[") && ip.endsWith("]")) {
+        /* if (ip.startsWith("[") && ip.endsWith("]")) {
             ip = ip.substring(1, ip.length() - 1);
-        }
+        }*/
 
         if (!SEEN.add(ip))
             return;

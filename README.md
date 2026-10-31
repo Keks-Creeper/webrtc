@@ -15,14 +15,13 @@ run `gradlew --refresh-dependencies` to refresh the local cache. `gradlew clean`
 Development client
 ==================
 The `runClient` task builds and launches the JarJar archive from `build/libs` in the isolated
-`run/client-jarjar` directory. To start it with the debugger enabled, run:
+`run/client-jarjar` directory. In VS Code, select **Client (Debugger + HCR)** and press F5.
+This runs the client with the debugger enabled and attaches the Java debugger when it is ready.
+Hot Code Replace is enabled automatically.
 
 ```text
 .\gradlew.bat runClient --debug-jvm
 ```
-
-The VS Code **Mod - Client** launch configuration runs `prepareClientLaunch` first so the
-mod is compiled, the JarJar archive is refreshed, and the NeoForm client classpath exists.
 
 Edit the files under `src`; the JAR in the run directory is generated and replaced on each launch.
 

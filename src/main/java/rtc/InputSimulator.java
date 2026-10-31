@@ -2,18 +2,17 @@ package rtc;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.platform.Window;
-import com.mojang.logging.LogUtils;
-
-import org.lwjgl.glfw.GLFW;
-import org.slf4j.Logger;
-
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.player.LocalPlayer;
+
+import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.platform.Window;
+import com.mojang.logging.LogUtils;
+import org.lwjgl.glfw.GLFW;
+import org.slf4j.Logger;
 import rtc.mixin.MouseHandlerAccessor;
 
 public final class InputSimulator {
@@ -100,6 +99,8 @@ public final class InputSimulator {
         });
     }
 
+    public static boolean remoteClick = false;
+
     public static void click(int nottherealbutton, boolean down) {
         execute(() -> {
             int button;
@@ -112,12 +113,15 @@ public final class InputSimulator {
             Minecraft mc = Minecraft.getInstance();
             MouseHandlerAccessor mouse = (MouseHandlerAccessor) mc.mouseHandler;
 
-            if (!Overlay.inside(mouse))
+            if (!Overlay.inside(mouse)) {
+                remoteClick = true;
                 ((MouseHandlerAccessor) mouse).rtc$onPress(
                         Minecraft.getInstance().getWindow().getWindow(),
                         InputConstants.Type.MOUSE.getOrCreate(button).getValue(),
                         down ? GLFW.GLFW_PRESS : GLFW.GLFW_RELEASE,
                         0);
+                remoteClick = false;
+            }
         });
     }
 

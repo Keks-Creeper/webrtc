@@ -1,10 +1,8 @@
 package rtc;
 
-import com.google.gson.JsonObject;
-import com.mojang.blaze3d.platform.NativeImage;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
+
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -12,8 +10,15 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.event.GameShuttingDownEvent;
 
+import com.google.gson.JsonObject;
+import com.mojang.blaze3d.platform.NativeImage;
+
 @EventBusSubscriber(modid = WebRTCMod.MODID, value = Dist.CLIENT)
 public class ClientEvents {
+
+    public static boolean mouseInside = false;
+    public static boolean superdupershit = false;
+    public static boolean reallyActive = false;
 
     private static long videoframett = 0;
 
