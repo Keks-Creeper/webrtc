@@ -1,7 +1,5 @@
 package rtc;
 
-import com.mojang.blaze3d.platform.Window;
-
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -9,12 +7,15 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;
+
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.common.ModConfigSpec.EnumValue;
+
+import com.mojang.blaze3d.platform.Window;
 import rtc.Config.When;
 import rtc.mixin.MouseHandlerAccessor;
 
@@ -51,7 +52,7 @@ public class Overlay {
 
     @SubscribeEvent
     public static void mouseClicked(ScreenEvent.MouseButtonPressed.Pre event) {
-        if (event.getButton() == 0 && inside(event.getMouseX(), event.getMouseY())) {
+        if (event.getButton() == 0 && inside(event.getMouseX(), event.getMouseY()) && !InputSimulator.remoteClick) {
             Util.getPlatform().openUri("http://" + link());
             event.setCanceled(true);
         }

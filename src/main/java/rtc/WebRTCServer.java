@@ -751,9 +751,6 @@ public final class WebRTCServer {
     }
 
     public static synchronized void stop() {
-        if (Config.RELOAD_ON_STOP.get())
-            sendToAllClients("{\"reload\":0}");
-
         VideoStreamer.stop();
 
         if (serverChannel != null) {

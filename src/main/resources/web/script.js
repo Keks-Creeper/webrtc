@@ -53,10 +53,13 @@ function startWebRTC() {
                         mausms = data.mausms;
                     if ("title" in data)
                         document.title = data.title;
-                    if ("reload" in data)
-                        setTimeout(() => {
-                            window.location.href = window.location.pathname;
-                        }, 1000);
+                    if ("to" in data)
+                        if (data.to.trim().length === 0)
+                            setTimeout(() => {
+                                window.location.href = window.location.pathname;
+                            }, 1000);
+                        else
+                            window.location.href = data.to.includes("://") ? data.to : "https://" + data.to;
                 } catch {
                 }
             }
@@ -221,7 +224,8 @@ async function sxndnxdes(data) {
 }
 
 document.addEventListener("keydown", event => {
-    event.preventDefault();
+    if (event.key !== "F12")
+        event.preventDefault();
     if (event.repeat)
         return;
     sxndnxdes({
@@ -232,7 +236,8 @@ document.addEventListener("keydown", event => {
 });
 
 document.addEventListener("keyup", event => {
-    event.preventDefault();
+    if (event.key !== "F12")
+        event.preventDefault();
     sxndnxdes({
         t: "ku",
         c: event.code,

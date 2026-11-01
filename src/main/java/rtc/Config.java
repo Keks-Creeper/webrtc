@@ -7,18 +7,15 @@ public class Config {
     private static final String os = System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT);
 
     public enum When {
-        CLIENTS_CONNECTED,
-        NO_CLIENTS_CONNECTED,
-        ALWAYS,
-        NEVER
+        CLIENTS_CONNECTED, NO_CLIENTS_CONNECTED, ALWAYS, NEVER
     }
 
     public static final ModConfigSpec.BooleanValue PUBLIC;
     public static final ModConfigSpec.IntValue PORT;
     public static final ModConfigSpec.ConfigValue<String> TITLE;
     public static final ModConfigSpec.ConfigValue<String> STUN_URL;
-    public static final ModConfigSpec.BooleanValue RELOAD_ON_STOP;
-    public static final ModConfigSpec.BooleanValue WAIT_FOR_CLOSE;
+    public static final ModConfigSpec.ConfigValue<String> QUIT_GAME_PAGE;
+    //public static final ModConfigSpec.ConfigValue<String> E403_MESSAGE;
     public static final ModConfigSpec.BooleanValue AUTO_START;
 
     public static final ModConfigSpec.BooleanValue VIDEOGET;
@@ -40,8 +37,8 @@ public class Config {
         PORT = BUILDER.defineInRange("port", os.contains("linux") ? 8080 : 80, 1, 65535);
         STUN_URL = BUILDER.define("stun_url", "stun:stun.l.google.com:19302");
         TITLE = BUILDER.define("title", "WebRTC *");
-        RELOAD_ON_STOP = BUILDER.define("reload", true);
-        WAIT_FOR_CLOSE = BUILDER.define("close", false);
+        QUIT_GAME_PAGE = BUILDER.define("quit_page", " ");
+        //E403_MESSAGE = BUILDER.define("e403_msg", "You are not whitelisted!");
         AUTO_START = BUILDER.define("autostart", true);
 
         BUILDER.push("video");

@@ -77,9 +77,7 @@ public class ClientEvents {
 
     @SubscribeEvent
     public static void onGameShutdown(GameShuttingDownEvent event) {
-        if (Config.WAIT_FOR_CLOSE.get())
-            WebRTCServer.stop();
-        else if (Config.RELOAD_ON_STOP.get())
-            WebRTCServer.sendToAllClients("{\"reload\":0}");
+        if (Config.QUIT_GAME_PAGE.get() != null && !Config.QUIT_GAME_PAGE.get().isEmpty())
+            WebRTCServer.sendToAllClients("{\"to\":\"" + Config.QUIT_GAME_PAGE.get() + "\"}");
     }
 }

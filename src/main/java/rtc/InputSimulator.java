@@ -113,15 +113,15 @@ public final class InputSimulator {
             Minecraft mc = Minecraft.getInstance();
             MouseHandlerAccessor mouse = (MouseHandlerAccessor) mc.mouseHandler;
 
-            if (!Overlay.inside(mouse)) {
-                remoteClick = true;
-                ((MouseHandlerAccessor) mouse).rtc$onPress(
-                        Minecraft.getInstance().getWindow().getWindow(),
-                        InputConstants.Type.MOUSE.getOrCreate(button).getValue(),
-                        down ? GLFW.GLFW_PRESS : GLFW.GLFW_RELEASE,
-                        0);
-                remoteClick = false;
-            }
+            //if (!Overlay.inside(mouse)) {
+            remoteClick = true;
+            ((MouseHandlerAccessor) mouse).rtc$onPress(
+                    Minecraft.getInstance().getWindow().getWindow(),
+                    InputConstants.Type.MOUSE.getOrCreate(button).getValue(),
+                    down ? GLFW.GLFW_PRESS : GLFW.GLFW_RELEASE,
+                    0);
+            remoteClick = false;
+            //}
         });
     }
 
