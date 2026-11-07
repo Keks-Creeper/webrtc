@@ -8,18 +8,15 @@ import java.nio.file.StandardOpenOption;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.minecraft.client.Minecraft;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import net.minecraft.client.Minecraft;
 
 public final class IPHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("WebRTC-IPLogger");
-
-    private static final Path FILE = Minecraft.getInstance().gameDirectory.toPath()
-            .resolve("config/webrtc/ips.log");
-
+    private static final Path FILE = Minecraft.getInstance().gameDirectory.toPath().resolve("config/webrtc/ips.log");
     private static final Set<String> SEEN = ConcurrentHashMap.newKeySet();
 
     static {
@@ -42,9 +39,9 @@ public final class IPHandler {
         if (ip == null || ip.isBlank())
             return;
 
-        /* if (ip.startsWith("[") && ip.endsWith("]")) {
+        if (ip.startsWith("[") && ip.endsWith("]")) {
             ip = ip.substring(1, ip.length() - 1);
-        }*/
+        }
 
         if (!SEEN.add(ip))
             return;

@@ -2,12 +2,9 @@ const video = document.getElementById("screen");
 const audio = document.getElementById("audio");
 
 let pc = null;
-
 let controlChannel = null;
 let mouseChannel = null;
-
 let signaling = null;
-
 let plock = false;
 
 function startWebRTC() {
@@ -91,6 +88,9 @@ function startWebRTC() {
 
     // video displaying
     pc.ontrack = async event => {
+        document.getElementById("screen").style.display = "block";
+        document.querySelector('link[rel="icon"]').href = "<!--LOGO2-->";
+
         console.log(
             "TRACK ARRIVED:",
             event.track.kind,
@@ -213,10 +213,19 @@ function connectSignaling() {
     };
 }
 
+// logging in
+document.getElementById("loginForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const password = document.getElementById("password").value;
+    document.getElementById("password").style.display = "none";
+    signaling.send(JSON.stringify({
+        "p": password
+    }));
+});
 
 
 //keyboard stuff
-async function sxndnxdes(data) {
+function sxndnxdes(data) {
     if (!controlChannel || controlChannel.readyState !== "open")
         return false;
     controlChannel.send(JSON.stringify(data));
@@ -224,29 +233,27 @@ async function sxndnxdes(data) {
 }
 
 document.addEventListener("keydown", event => {
-    if (event.key !== "F12")
-        event.preventDefault();
     if (event.repeat)
         return;
-    sxndnxdes({
+    if (sxndnxdes({
         t: "kd",
         c: event.code,
         k: event.key
-    });
+    }) && event.key !== "F12")
+        event.preventDefault();
 });
 
 document.addEventListener("keyup", event => {
-    if (event.key !== "F12")
-        event.preventDefault();
-    sxndnxdes({
+    if (sxndnxdes({
         t: "ku",
         c: event.code,
         k: event.key
-    });
+    }) && event.key !== "F12")
+        event.preventDefault();
 });
 
 // mouse stuff
-async function maus(data) {
+function maus(data) {
     if (!mouseChannel || mouseChannel.readyState !== "open")
         return false;
     mouseChannel.send(JSON.stringify(data));
@@ -257,13 +264,18 @@ async function maus(data) {
             document.exitPointerLock();
     }
     catch { }
+    pley();
+    return true;
+}
+
+async function pley() {
     try {
         audio.muted = false;
         await audio.play();
     }
     catch { }
-    return true;
 }
+
 
 function mouse(w, event) {
     const rect = document.getElementById("screen").getBoundingClientRect();
@@ -274,7 +286,7 @@ function mouse(w, event) {
     const normalizedX = x / rect.width;
     const normalizedY = y / rect.height;
 
-    sxndnxdes({
+    return sxndnxdes({
         t: w,
         b: event.button,
         x: normalizedX,
@@ -282,15 +294,13 @@ function mouse(w, event) {
     });
 }
 document.addEventListener("mousedown", (event) => {
-    event.preventDefault();
-    mouse("md", event);
+    if (mouse("md", event)) event.preventDefault();
 });
 document.addEventListener("contextmenu", (event) => {
     event.preventDefault();
 });
 document.addEventListener("mouseup", (event) => {
-    event.preventDefault();
-    mouse("mu", event);
+    if (mouse("mu", event)) event.preventDefault();
 });
 document.addEventListener("wheel", (event) => {
     sxndnxdes({

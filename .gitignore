@@ -28,7 +28,8 @@ bin/
 
 ### VS Code ###
 .vscode/
-*.py
+trash/
+!**/src/**/trash/
 
 ### Mac OS ###
 .DS_Store

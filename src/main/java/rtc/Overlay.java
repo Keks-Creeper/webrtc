@@ -66,6 +66,7 @@ public class Overlay {
         if (LINK_BOUNDS != null)
             event.addListener(Button.builder(
                     Component.translatable(WebRTCServer.started.getAcquire() ? "rtc.restart" : "rtc.start"), button -> {
+                        WebRTCServer.sendToAllClients("{\"to\":\" \"}");
                         WebRTCServer.OPEN = false;
                         WebRTCServer.restart();
                     })

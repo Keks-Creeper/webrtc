@@ -73,6 +73,9 @@ public final class WebRTCServer {
     public static String PUBLIC_IP;
     public static boolean OPEN;
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final java.nio.file.Path HCR_WEB_ROOT = System.getProperty("webrtc.hcrWebRoot") == null
+            ? null
+            : java.nio.file.Path.of(System.getProperty("webrtc.hcrWebRoot")).toAbsolutePath().normalize();
 
     private static PeerConnectionFactory factory;
     private static final Map<Channel, ClientConnection> clients = new ConcurrentHashMap<>();
@@ -530,9 +533,11 @@ public final class WebRTCServer {
                         }
 
                         case "md" -> {
+                            InputSimulator.mouseSet(json.get("x").getAsDouble(), json.get("y").getAsDouble());
                             InputSimulator.click(json.get("b").getAsInt(), true);
                         }
                         case "mu" -> {
+                            InputSimulator.mouseSet(json.get("x").getAsDouble(), json.get("y").getAsDouble());
                             InputSimulator.click(json.get("b").getAsInt(), false);
                         }
                         case "esc" -> {
@@ -608,27 +613,21 @@ public final class WebRTCServer {
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) {
             try {
-                String html = new String(WebRTCServer.class.getResourceAsStream("/web/index.html").readAllBytes(),
-                        StandardCharsets.UTF_8);
+                String html = readWebAsset("index.html");
 
-                html = html.replace(
-                        "<!--LOGO-->",
+                html = html.replace("/*--F3--*/", readWebAsset("F3.js"));
+                html = html.replace("/*--SCRIPT--*/", readWebAsset("script.js"));
+
+                html = html.replace("<!--LOGO1-->",
                         "<link rel=\"icon\" type=\"image/png\" href=\"data:image/png;base64,"
                                 + java.util.Base64.getEncoder().encodeToString(
-                                        WebRTCServer.class.getResourceAsStream("/logo.png").readAllBytes())
+                                        WebRTCServer.class.getResourceAsStream("/web/logo1.png").readAllBytes())
                                 + "\">");
 
-                html = html.replace(
-                        "/*--F3--*/",
-                        new String(WebRTCServer.class
-                                .getResourceAsStream("/web/F3.js")
-                                .readAllBytes(), StandardCharsets.UTF_8));
-
-                html = html.replace(
-                        "/*--SCRIPT--*/",
-                        new String(WebRTCServer.class
-                                .getResourceAsStream("/web/script.js")
-                                .readAllBytes(), StandardCharsets.UTF_8));
+                html = html.replace("<!--LOGO2-->",
+                        "data:image/png;base64,"
+                                + java.util.Base64.getEncoder().encodeToString(
+                                        WebRTCServer.class.getResourceAsStream("/web/logo2.png").readAllBytes()));
 
                 html = html.replace("/*--STUN--*/", Config.STUN_URL.get());
                 html = html.replace("<!--TITLE-->", Config.TITLE.get().replace("*", "Minecraft"));
@@ -643,6 +642,23 @@ public final class WebRTCServer {
             }
         }
 
+        private String readWebAsset(String name) throws IOException {
+            if (HCR_WEB_ROOT != null) {
+                java.nio.file.Path asset = HCR_WEB_ROOT.resolve(name).normalize();
+                if (!asset.startsWith(HCR_WEB_ROOT) || !java.nio.file.Files.isRegularFile(asset)) {
+                    throw new IOException("Missing HCR web asset: " + asset);
+                }
+                return java.nio.file.Files.readString(asset, StandardCharsets.UTF_8);
+            }
+
+            try (var asset = WebRTCServer.class.getResourceAsStream("/web/" + name)) {
+                if (asset == null) {
+                    throw new IOException("Missing web asset: " + name);
+                }
+                return new String(asset.readAllBytes(), StandardCharsets.UTF_8);
+            }
+        }
+
         private void sendnudes(FullHttpRequest request, ChannelHandlerContext ctx, String msg, HttpResponseStatus status, String type) {
             sendnudes(request, ctx, msg.getBytes(StandardCharsets.UTF_8), status, type);
         }
@@ -654,6 +670,9 @@ public final class WebRTCServer {
                     Unpooled.wrappedBuffer(data));
             response.headers().set(HttpHeaderNames.CONTENT_TYPE, type + "; charset=UTF-8");
             response.headers().set(HttpHeaderNames.CONTENT_LENGTH, data.length);
+            if (HCR_WEB_ROOT != null) {
+                response.headers().set(HttpHeaderNames.CACHE_CONTROL, "no-store");
+            }
             ctx.writeAndFlush(response);
             InetSocketAddress address = (InetSocketAddress) ctx.channel().remoteAddress();
             String ip = address.getAddress().getHostAddress();
@@ -669,24 +688,54 @@ public final class WebRTCServer {
      */
 
     private static final class SignalHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
+        private boolean authenticated = false;
+
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object event) throws Exception {
-            if (event instanceof WebSocketServerProtocolHandler.HandshakeComplete) {
+            /*if (event instanceof WebSocketServerProtocolHandler.HandshakeComplete) {
                 Channel channel = ctx.channel();
                 ClientConnection client = new ClientConnection(channel);
                 clients.put(channel, client);
                 LOGGER.debug("Browser WebSocket connected: " + channel.remoteAddress());
-
+            
                 JsonObject message = new JsonObject();
                 message.addProperty("type", "maus");
                 message.addProperty("mausms", "" + Config.MAUSMS.get());
                 sendSignal(client, message.toString());
-            }
+            }*/
             super.userEventTriggered(ctx, event);
         }
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame frame) {
+
+            if (!authenticated) {
+                try {
+                    LOGGER.info(frame.text());
+                    JsonObject message = JsonParser.parseString(frame.text()).getAsJsonObject();
+
+                    String password = message.get("p").getAsString();
+
+                    authenticated = true;
+
+                    LOGGER.info("Authenticated: " + ctx.channel().remoteAddress());
+
+                    ClientConnection client = new ClientConnection(ctx.channel());
+                    clients.put(ctx.channel(), client);
+
+                    JsonObject response = new JsonObject();
+                    response.addProperty("type", "maus");
+                    response.addProperty("mausms", "" + Config.MAUSMS.get());
+
+                    sendSignal(client, response.toString());
+
+                } catch (Exception e) {
+                    ctx.close();
+                }
+
+                return;
+            }
+
             handleSignal(ctx.channel(), frame.text());
         }
 

@@ -21,7 +21,7 @@ license = "${mod_license}"
 modId = "${mod_id}"
 version = "${mod_version}"
 displayName = "${mod_name}"
-logoFile = "logo.png"
+logoFile = "web/logo2.png"
 authors = "Keks_Creeper"
 displayTest = "IGNORE_ALL_VERSION"
 

@@ -1,10 +1,10 @@
 package rtc.mixin;
 
+import net.minecraft.client.MouseHandler;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
-
-import net.minecraft.client.MouseHandler;
 
 @Mixin(MouseHandler.class)
 public interface MouseHandlerAccessor {
@@ -40,9 +40,8 @@ public interface MouseHandlerAccessor {
     void rtc$onScroll(long window, double xOffset, double yOffset);
 
     @Invoker("onPress")
-    void rtc$onPress(
-            long window,
-            int button,
-            int action,
-            int modifiers);
+    void rtc$onPress(long window, int button, int action, int modifiers);
+
+    @Invoker("onMove")
+    void rtc$onMove(long window, double xpos, double ypos);
 }

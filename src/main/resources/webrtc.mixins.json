@@ -8,7 +8,8 @@
     "MouseHandlerMixin",
     "MinecraftMixin",
     "LibraryMixin",
-    "WindowMixin"
+    "WindowMixin",
+    "AbstractContainerScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -70,6 +70,9 @@ runs {
 
         // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
         systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        if (project.hasProperty('hcrClient')) {
+            systemProperty 'webrtc.hcrWebRoot', file('src/main/resources/web').absolutePath
+        }
     }
 
     server {
@@ -196,10 +199,10 @@ def createHcrClientJar = tasks.register('createHcrClientJar') {
         def ideRoot = ideClassesDir.toPath()
 
         java.nio.file.Files.walk(ideRoot).withCloseable { paths ->
-            paths.filter { path ->
-                java.nio.file.Files.isRegularFile(path)
-                        && path.toString().endsWith('.class')
-                        && ideRoot.relativize(path).toString().startsWith("rtc${File.separator}")
+            paths.filter { path -> 
+                    java.nio.file.Files.isRegularFile(path)
+                    && path.toString().endsWith('.class')
+                    && ideRoot.relativize(path).toString().startsWith("rtc${File.separator}")  
             }.forEach { classFile ->
                 def relativePath = ideRoot.relativize(classFile).toString().replace('\\', '/')
                 ideClassFiles[relativePath] = classFile.toFile()

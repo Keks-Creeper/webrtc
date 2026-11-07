@@ -15,7 +15,7 @@ public class Config {
     public static final ModConfigSpec.ConfigValue<String> TITLE;
     public static final ModConfigSpec.ConfigValue<String> STUN_URL;
     public static final ModConfigSpec.ConfigValue<String> QUIT_GAME_PAGE;
-    //public static final ModConfigSpec.ConfigValue<String> E403_MESSAGE;
+    //public static final ModConfigSpec.ConfigValue<String> Z403_MESSAGE;
     public static final ModConfigSpec.BooleanValue AUTO_START;
 
     public static final ModConfigSpec.BooleanValue VIDEOGET;
@@ -38,7 +38,7 @@ public class Config {
         STUN_URL = BUILDER.define("stun_url", "stun:stun.l.google.com:19302");
         TITLE = BUILDER.define("title", "WebRTC *");
         QUIT_GAME_PAGE = BUILDER.define("quit_page", " ");
-        //E403_MESSAGE = BUILDER.define("e403_msg", "You are not whitelisted!");
+        //Z403_MESSAGE = BUILDER.define("z403msg", "You are not whitelisted!");
         AUTO_START = BUILDER.define("autostart", true);
 
         BUILDER.push("video");

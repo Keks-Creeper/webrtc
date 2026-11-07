@@ -38,31 +38,42 @@ public final class InputSimulator {
         QUEUE.offer(task);
     }
 
+    public static boolean shifted = true;
+    public static int swapSlot = -1;
+
     public static void keyDown(String code, String keyy) {
         execute(() -> {
             Minecraft mc = Minecraft.getInstance();
+
             if (mc.screen != null) {
-                if (keyy.length() == 1) {
-                    mc.screen.charTyped(
-                            keyy.charAt(0),
-                            0);
-                    return;
-                }
+
+                if (keyy.length() == 1)
+                    mc.screen.charTyped(keyy.charAt(0), 0);
 
                 try {
-                    int keyCode = InputConstants.getKey(
-                            "key.keyboard." + kii(code)).getValue();
+                    int keyCode = InputConstants.getKey("key.keyboard." + kii(code)).getValue();
+                    Integer key = keyFromCode(code);
+                    int scanCode = GLFW.glfwGetKeyScancode(key);
 
-                    mc.screen.keyPressed(
-                            keyCode,
-                            0,
-                            0);
+                    for (int i = 0; i < 9; i++) {
+                        if (mc.options.keyHotbarSlots[i].matches(key, scanCode)) {
+                            swapSlot = i;
+                            break;
+                        }
+                    }
+                    if (mc.options.keySwapOffhand.matches(key, scanCode))
+                        swapSlot = 40;
+
+                    mc.screen.keyPressed(keyCode, scanCode, 0);
+
                 } catch (Exception e) {
                     LOGGER.warn("unknown key: " + code + " (" + keyy + ")");
                 }
 
-                return;
             }
+
+            if (code.contains("Shift"))
+                shifted = true;
 
             Integer key = keyFromCode(code);
             if (key != -1) {
@@ -89,6 +100,9 @@ public final class InputSimulator {
                 long window = mc.getWindow().getWindow();
                 int scanCode = GLFW.glfwGetKeyScancode(key);
 
+                if (code.contains("Shift"))
+                    shifted = false;
+
                 keyboard.keyPress(
                         window,
                         key,
@@ -113,15 +127,16 @@ public final class InputSimulator {
             Minecraft mc = Minecraft.getInstance();
             MouseHandlerAccessor mouse = (MouseHandlerAccessor) mc.mouseHandler;
 
-            //if (!Overlay.inside(mouse)) {
             remoteClick = true;
-            ((MouseHandlerAccessor) mouse).rtc$onPress(
-                    Minecraft.getInstance().getWindow().getWindow(),
-                    InputConstants.Type.MOUSE.getOrCreate(button).getValue(),
-                    down ? GLFW.GLFW_PRESS : GLFW.GLFW_RELEASE,
-                    0);
-            remoteClick = false;
-            //}
+            try {
+                mouse.rtc$onPress(
+                        mc.getWindow().getWindow(),
+                        button,
+                        down ? GLFW.GLFW_PRESS : GLFW.GLFW_RELEASE,
+                        3);
+            } finally {
+                remoteClick = false;
+            }
         });
     }
 
@@ -135,9 +150,7 @@ public final class InputSimulator {
         Minecraft mc = Minecraft.getInstance();
         MouseHandlerAccessor mouse = (MouseHandlerAccessor) mc.mouseHandler;
         Window window = mc.getWindow();
-
-        mouse.rtc$setXpos(mx * window.getScreenWidth());
-        mouse.rtc$setYpos(my * window.getScreenHeight());
+        mouse.rtc$onMove(window.getWindow(), mx * window.getScreenWidth(), my * window.getScreenHeight());
     }
 
     public static void escape() {

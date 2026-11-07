@@ -4,13 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <title><!--TITLE--></title>
-    <!--LOGO-->
+    <!--LOGO1-->
 
     <style>
         body {
             margin: 0;
-            background: #111;
             overflow: hidden;
+            background: #89DB80;
         }
 
         video {
@@ -18,12 +18,40 @@
             width: 100vw;
             height: 100vh;
             object-fit: fill;
+            display: none;
+        }
+
+        #password {
+            background: #89DB80;
+            width: 100vw;
+            height: 100vh;
+            object-fit: fill;
+            text-align: center;
+            font-size: 2000%;
+            font-family: Impact;
+        }
+
+        .logintext {
+            font-size: 2000%;
+            width: 100vw;
+            height: 100vh;
+            object-fit: fill;
+            display: grid;
+            font-family: Impact;
+            place-items: center;
+            text-align: center;
         }
     </style>
 </head>
 
 <body>
-    <video id="screen" autoplay playsinline muted></video>
+    <video id="screen" autoplay playsinline muted style="display: none;"></video>
+    <form id="loginForm">
+        <input id="password" type="password" placeholder="Password?" autocomplete="current-password">
+    </form>
+    <div class="logintext">
+        <p>Logging in...</p>
+    </div>
     <audio id="audio" autoplay playsinline></audio>
 
 

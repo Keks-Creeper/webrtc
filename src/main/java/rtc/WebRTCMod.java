@@ -1,9 +1,5 @@
 package rtc;
 
-import com.mojang.logging.LogUtils;
-
-import org.slf4j.Logger;
-
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -12,6 +8,9 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
+
+import com.mojang.logging.LogUtils;
+import org.slf4j.Logger;
 
 @Mod(value = WebRTCMod.MODID, dist = Dist.CLIENT)
 public class WebRTCMod {
@@ -26,14 +25,14 @@ public class WebRTCMod {
         // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
         //NeoForge.EVENT_BUS.register(this);
         ModLoadingContext.get().getActiveContainer().registerConfig(ModConfig.Type.COMMON, Config.SPEC,
-                "webrtc/client.toml");
+                "webrtc/config.toml");
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modEventBus.addListener(this::onConfigLoading);
     }
 
     private void onConfigLoading(ModConfigEvent.Loading event) {
         if (FMLEnvironment.dist == Dist.CLIENT && Config.AUTO_START.get()) {
-            LOGGER.info("Starting the RTC");
+            LOGGER.info("Starting the Server");
             WebRTCServer.start();
         }
     }
